@@ -1,5 +1,5 @@
 use nng::{
-    Socket, RawSocket, Protocol, forwarder,
+    RawSocket, Protocol, forwarder,
 };
 
 const FRONT_URL: &str = "tcp://localhost:7778";
@@ -7,30 +7,21 @@ const BACK_URL: &str = "tcp://localhost:7779";
 
 fn main() {
     
-    let front_end: Socket = Socket::new(Protocol::Sub0).unwrap();
-    let back_end:  Socket = Socket::new(Protocol::Pub0).unwrap();
+    let front_end: RawSocket = RawSocket::new(Protocol::Sub0).unwrap();
+    let back_end:  RawSocket = RawSocket::new(Protocol::Pub0).unwrap();
 
-    let ret = front_end.listen(FRONT_URL);
-    match ret {
-        Err(x) => panic!("failed to listen on front end: {}", x),
-        _ => ()
-    }
+    let ret = front_end.socket.listen(FRONT_URL);
+    if let Err(x) = ret { panic!("failed to listen on front end: {}", x) }
 
-    let ret = back_end.listen(BACK_URL);
-    match ret {
-        Err(x) => panic!("failed to listen on back end: {}", x),
-        _ => ()
-    }
+    let ret = back_end.socket.listen(BACK_URL);
+    if let Err(x) = ret { panic!("failed to listen on back end: {}", x) }
 
 
     let ret = forwarder(
-        RawSocket::try_from(front_end).unwrap(),
-        RawSocket::try_from(back_end).unwrap()
+        front_end,
+        back_end
     );
 
-    match ret {
-        Err(fw_err) => println!("Forwarder exited with err: {}", fw_err),
-        _ => ()
-    }
+    if let Err(fw_err) = ret { println!("Forwarder exited with err: {}", fw_err) }
 
 }
